@@ -1,1 +1,21 @@
 /* NOTE: css that we want to apply to body goes here */
+
+html{
+    height: 100%;
+}
+
+body{
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#root{
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.container{
+    display: flex;
+}
