@@ -1,32 +1,37 @@
-// NOTE: import css here when we define css for this component specifically
+// Note: open source airport information - https://ourairports.com/data/
+
+import '../styles/FSEJobFinder.css'
 
 import { useState, useEffect } from 'react';
 
-import Container from 'react-bootstrap/Container';
+import {
+  Container, Row, Col, Dropdown,
+  Button, Card, CardGroup, ListGroup, ListGroupItem
+} from 'react-bootstrap';
 
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
-import Dropdown from 'react-bootstrap/Dropdown';
-
-import '../styles/FSEJobFinder.css'
 import DropdownMenu from 'react-bootstrap/esm/DropdownMenu';
 import DropdownItem from 'react-bootstrap/esm/DropdownItem';
-import { Button } from 'react-bootstrap';
-import axios from 'axios';
 
+import axios from 'axios';
 
 function FSEJobFinder() {
   const [aircraft, setAircraft] = useState();
-
-  // const [assignments, setAssignments] = useState();
+  const [assignments, setAssignments] = useState([]);
   const [aircraftDictionary, setAircraftDictionary] = useState();
+  const [airportInfo, setAirportInfo] = useState();
+  const [criteria, setCriteria] = useState();
+  const [isLoading, setLoading] = useState(false);
 
-  const apiEndpoint = 'https://localhost:7152';
-  const apiResource = '/api/FSEJobFinder';
+  const API_ENDPOINT = 'https://localhost:7152';
+  const API_RESOURCE = '/api/FSEJobFinder';
+
+  const LAT_INDEX = 6;
+  const LONG_INDEX = 7;
+  // const ELEVATION_INDEX = 8;
 
   useEffect(() => {
     async function getMakeModels() {
-      const url = `${apiEndpoint}${apiResource}/v2/makemodels`;
+      const url = `${API_ENDPOINT}${API_RESOURCE}/v2/makemodels`;
       try {
         const res = await axios.get(url);
         if (res.status === 200) {
@@ -45,9 +50,70 @@ function FSEJobFinder() {
         }
       }
     }
+
+    // Todo: see if there is an api we can use instead of the static airport data
+    function getAirportInfo() {
+      fetch('../data/Airport_Info.txt')
+        .then(r => r.text())
+        .then(text => {
+          setAirportInfo(text);
+        });
+    }
+
     getMakeModels();
+    getAirportInfo();
   }, []);
 
+  useEffect(() => {
+    async function getAssignments() {
+      // Todo: check for user key and present error if not found
+      const aircraftKey = Object.keys(aircraftDictionary).find(key => aircraftDictionary[key] === aircraft);
+      const userKey = sessionStorage.getItem('user-key')
+      const url = `${API_ENDPOINT}${API_RESOURCE}/v1${criteria}/${aircraftKey}`;
+      try {
+        const response = await axios.get(url, {
+          headers: {
+            'fse-access-key': userKey
+          }
+        });
+
+        if (response.status === 200) {
+          if (Array.isArray(response.data)) {
+            setAssignments(response.data);
+          } else {
+            const result = [];
+            result.push(response.data);
+            setAssignments(result);
+          }
+          setLoading(false);
+        }
+      } catch (error) {
+        if (error.response) {
+          console.log(`Status Code: ${error.response.status}`);
+          console.log(error.response.data);
+        } else {
+          console.log(error);
+        }
+      }
+    }
+
+    if (isLoading) {
+      getAssignments();
+    }
+
+  }, [isLoading, aircraft, aircraftDictionary, criteria]);
+
+  function handleClick(criteria) {
+    setCriteria(criteria);
+    setLoading(true);
+  }
+
+  function rad(x) {
+    return x * Math.PI / 180;
+  };
+
+  // Haversine formula for calculating great circle distance
+  // source: https://stackoverflow.com/questions/1502590/calculate-distance-between-two-points-in-google-maps-v3
   function getDistance(origin, destination) {
 
     if (airportInfo && airportInfo.length > 0) {
@@ -122,6 +188,7 @@ function FSEJobFinder() {
       maximumFractionDigits: 0
     }).format(strAmount)
   }
+
   function generateRouteCards() {
     let row = [];
     if (assignments) {
@@ -155,7 +222,7 @@ function FSEJobFinder() {
 
   if (!aircraft) {
     if (aircraftDictionary) {
-      // TODO: is there is a better way to get the key of the first element?
+      // Todo: is there is a better way to get the key of the first element?
       setAircraft(Object.entries(aircraftDictionary)[0][1]);
     }
   }
@@ -185,20 +252,47 @@ function FSEJobFinder() {
           }
         </Col>
       </Row>
-      <Row className='mt-4' xs='auto'>
-        <Col>
-          <Button id='bestAssignment' onClick={() => getAssignments('/bestAssignment')}>Best Assignment</Button>
+      <Row className='mt-4' xs='auto' s='auto'>
+        <Col className='mb-2'>
+          {/* Todo: implement loading button on click */}
+          {/* https://react-bootstrap.github.io/components/buttons/#button-loading-state */}
+          <Button
+            id='bestAssignment'
+            onClick={!isLoading ? () => handleClick('/bestAssignment') : null}
+            disabled={isLoading}
+          >
+            Best Assignment
+          </Button>
         </Col>
-        <Col>
-          <Button id='assignments' onClick={() => getAssignments('/assignments')}>All Assignments</Button>
+        <Col className='mb-2'>
+          <Button
+            id='assignments'
+            onClick={!isLoading ? () => handleClick('/assignments') : null}
+            disabled={isLoading}
+          >
+            All Assignments
+          </Button>
         </Col>
-        <Col>
-          <Button id='assignmentsFromOrToUS' onClick={() => getAssignments('/assignmentsFromOrToUS')}>Assignments to or from the US</Button>
+        <Col className='mb-2'>
+          <Button
+            id='assignmentsFromOrToUS'
+            onClick={!isLoading ? () => handleClick('/assignmentsFromOrToUS') : null}
+            disabled={isLoading}
+          >
+            Assignments to or from the US
+          </Button>
         </Col>
       </Row>
+      {/* Todo: progress bar when getting assignments?*/}
       <hr />
-
-
+      {isLoading &&
+        <h4>Getting Assignments...</h4>
+      }
+      {!isLoading &&
+        <CardGroup>
+          {generateRouteCards()}
+        </CardGroup>
+      }
     </Container>
   );
 }
