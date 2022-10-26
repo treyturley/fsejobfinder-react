@@ -96,10 +96,9 @@ function FSEJobFinder() {
             const result = [];
             result.push(response.data);
             setAssignments(result);
-            setLastSuccessfulRequest(new Date());
-            setAssignmentsRetrieved(true);
           }
-          setLoading(false);
+          setLastSuccessfulRequest(new Date());
+          setAssignmentsRetrieved(true);
         }
         else {
           if (response) {
