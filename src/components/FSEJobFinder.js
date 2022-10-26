@@ -49,7 +49,7 @@ function FSEJobFinder() {
         }
       } catch (error) {
         if (error.response) {
-          console.error(`${error.message} - Status Code: ${error.respone.status}`);
+          console.error(error.message);
         } else {
           console.error(error.message);
         }
@@ -110,7 +110,7 @@ function FSEJobFinder() {
         }
       } catch (error) {
         if (error.response) {
-          console.error(`${error.message} - Status Code: ${error.respone.status}`);
+          console.error(error.message);
           setLoading(false);
           setAssignmentsRetrieved(false);
         } else {
