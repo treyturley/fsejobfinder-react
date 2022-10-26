@@ -48,6 +48,33 @@ function FSEJobFinder() {
     getMakeModels();
   }, []);
 
+  // Todo: find a better way to estimate flight time
+  function estimateFlightTime(origin, destination) {
+
+    let flightTime = 0;
+    const distance = getDistance(origin, destination);
+
+    flightTime = parseFloat((distance / 370).toFixed(2));
+
+    if (flightTime < 1.0) {
+      // roll in extra time for departure/arrival
+      flightTime += .4;
+    }
+
+    const totalMinutes = flightTime * 60;
+    const hours = parseInt(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    return `${hours}h ${minutes.toFixed(0)}m`
+  }
+
+  function stringToCurrency(strAmount) {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0
+    }).format(strAmount)
+  }
   function generateRouteCards() {
     let row = [];
     if (assignments) {
