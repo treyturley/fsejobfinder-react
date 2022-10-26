@@ -48,6 +48,53 @@ function FSEJobFinder() {
     getMakeModels();
   }, []);
 
+  function getDistance(origin, destination) {
+
+    if (airportInfo && airportInfo.length > 0) {
+
+      let originLat = 0;
+      let originLong = 0;
+      let destinationLat = 0;
+      let destinationLong = 0;
+
+      // let originElevation = 0;
+      // let destinationElevation = 0;
+
+      const fileLines = airportInfo.split(/\r?\n/);
+
+      fileLines.forEach((line) => {
+        if (line.includes("\"" + origin + "\"")) {
+          const splitLine = line.split(',');
+          originLat = splitLine[LAT_INDEX];
+          originLong = splitLine[LONG_INDEX];
+          // originElevation = splitLine[ELEVATION_INDEX];
+        }
+        if (line.includes("\"" + destination + "\"")) {
+          const splitLine = line.split(',');
+          destinationLat = splitLine[LAT_INDEX];
+          destinationLong = splitLine[LONG_INDEX];
+          // destinationElevation = splitLine[ELEVATION_INDEX];
+        }
+      });
+
+      var R = 6378137; // Earth’s mean radius in meter
+
+      var dLat = rad(destinationLat - originLat);
+      var dLong = rad(destinationLong - originLong);
+
+      var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(rad(originLat)) * Math.cos(rad(destinationLat)) *
+        Math.sin(dLong / 2) * Math.sin(dLong / 2);
+
+      var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      var d = R * c;
+
+      // returns the distance in nautical miles
+      return Math.round(d * 0.000539957);
+    }
+  };
+
   // Todo: find a better way to estimate flight time
   function estimateFlightTime(origin, destination) {
 
