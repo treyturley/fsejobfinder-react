@@ -21,6 +21,10 @@ function FSEJobFinder() {
   const [airportInfo, setAirportInfo] = useState();
   const [criteria, setCriteria] = useState();
   const [isLoading, setLoading] = useState(false);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+
+  const [assignmentsRetrieved, setAssignmentsRetrieved] = useState(false);
+  const [lastSuccessfulRequest, setLastSuccessfulRequest] = useState(null);
 
   const API_ENDPOINT = 'https://localhost:7152';
   const API_RESOURCE = '/api/FSEJobFinder';
@@ -59,13 +63,17 @@ function FSEJobFinder() {
           setAirportInfo(text);
         });
     }
-
-    getMakeModels();
-    getAirportInfo();
-  }, []);
+    if (!aircraftDictionary) {
+      getMakeModels();
+    }
+    if (!airportInfo) {
+      getAirportInfo();
+    }
+  }, [aircraftDictionary, airportInfo]);
 
   useEffect(() => {
     async function getAssignments() {
+      setIsFirstLoad(false);
       // Todo: check for user key and present error if not found
       const aircraftKey = Object.keys(aircraftDictionary).find(key => aircraftDictionary[key] === aircraft);
       const userKey = sessionStorage.getItem('user-key')
@@ -84,15 +92,29 @@ function FSEJobFinder() {
             const result = [];
             result.push(response.data);
             setAssignments(result);
+            setLastSuccessfulRequest(Date());
+            setAssignmentsRetrieved(true);
           }
           setLoading(false);
+        }
+        else {
+          console.log("response was something other than a 200");
+          if (response) {
+            console.log(response.status);
+            setLoading(false);
+            setAssignmentsRetrieved(false);
+          }
         }
       } catch (error) {
         if (error.response) {
           console.log(`Status Code: ${error.response.status}`);
           console.log(error.response.data);
+          setLoading(false);
+          setAssignmentsRetrieved(false);
         } else {
           console.log(error);
+          setLoading(false);
+          setAssignmentsRetrieved(false);
         }
       }
     }
@@ -106,6 +128,7 @@ function FSEJobFinder() {
   function handleClick(criteria) {
     setCriteria(criteria);
     setLoading(true);
+    setAssignmentsRetrieved(true);
   }
 
   function rad(x) {
@@ -259,7 +282,7 @@ function FSEJobFinder() {
           <Button
             id='bestAssignment'
             onClick={!isLoading ? () => handleClick('/bestAssignment') : null}
-            disabled={isLoading}
+            disabled={isLoading || aircraft == null}
           >
             Best Assignment
           </Button>
@@ -268,7 +291,7 @@ function FSEJobFinder() {
           <Button
             id='assignments'
             onClick={!isLoading ? () => handleClick('/assignments') : null}
-            disabled={isLoading}
+            disabled={isLoading || aircraft == null}
           >
             All Assignments
           </Button>
@@ -277,7 +300,7 @@ function FSEJobFinder() {
           <Button
             id='assignmentsFromOrToUS'
             onClick={!isLoading ? () => handleClick('/assignmentsFromOrToUS') : null}
-            disabled={isLoading}
+            disabled={isLoading || aircraft == null}
           >
             Assignments to or from the US
           </Button>
@@ -285,14 +308,22 @@ function FSEJobFinder() {
       </Row>
       {/* Todo: progress bar when getting assignments?*/}
       <hr />
+      {/* {`last request: ${lastSuccessfulRequest.toString()}`} */}
       {isLoading &&
         <h4>Getting Assignments...</h4>
+      }
+      {!assignmentsRetrieved && !lastSuccessfulRequest && !isFirstLoad &&
+        `Unable to get new assignments!`
+      }
+      {!assignmentsRetrieved && lastSuccessfulRequest &&
+        `Unable to get new assignments! Showing old assignments from ${lastSuccessfulRequest.toString()}.`
       }
       {!isLoading &&
         <CardGroup>
           {generateRouteCards()}
         </CardGroup>
       }
+
     </Container>
   );
 }
