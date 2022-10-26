@@ -12,8 +12,6 @@ function Header() {
   const [userKey, setUserKey] = useState("");
   const [isUserKeySet, setIsUserKeySet] = useState(false);
 
-  // TODO: handle case where user key already exists in session
-
   const handleAccessKeyChange = event => {
     setUserKey(event.target.value);
   }
@@ -29,9 +27,6 @@ function Header() {
     setUserKey("");
     sessionStorage.removeItem("user-key");
   }
-
-  //TODO: if user key is set, remove input box and button and
-  //      add text indicating the key is set
 
   const sessionUserKey = sessionStorage.getItem("user-key");
   if (sessionUserKey && !isUserKeySet) {
