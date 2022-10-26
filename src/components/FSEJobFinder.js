@@ -26,7 +26,7 @@ function FSEJobFinder() {
   const [assignmentsRetrieved, setAssignmentsRetrieved] = useState(false);
   const [lastSuccessfulRequest, setLastSuccessfulRequest] = useState(null);
 
-  const API_ENDPOINT = 'https://localhost:7152';
+  const API_ENDPOINT = 'http://192.168.1.25:7152';
   const API_RESOURCE = '/api/FSEJobFinder';
 
   const LAT_INDEX = 6;
