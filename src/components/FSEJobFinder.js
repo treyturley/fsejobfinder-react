@@ -22,6 +22,7 @@ function FSEJobFinder() {
   const [criteria, setCriteria] = useState();
   const [isLoading, setLoading] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [errorMsg, setErroMsg] = useState('');
 
   const [assignmentsRetrieved, setAssignmentsRetrieved] = useState(false);
   const [lastSuccessfulRequest, setLastSuccessfulRequest] = useState(null);
@@ -33,6 +34,7 @@ function FSEJobFinder() {
   const LONG_INDEX = 7;
   // const ELEVATION_INDEX = 8;
 
+  // Todo: consider storing assignments in local storage and populating on first load
   useEffect(() => {
     async function getMakeModels() {
       const url = `${API_ENDPOINT}${API_RESOURCE}/v2/makemodels`;
@@ -47,15 +49,15 @@ function FSEJobFinder() {
         }
       } catch (error) {
         if (error.response) {
-          console.log(error.response.status);
-          console.log(error.response.data);
+          console.error(`${error.message} - Status Code: ${error.respone.status}`);
         } else {
-          console.log(error);
+          console.error(error.message);
         }
       }
     }
 
     // Todo: see if there is an api we can use instead of the static airport data
+    //       maybe this is something we add to FSEDataFeedAPI using data from OurAirports?
     function getAirportInfo() {
       fetch('../data/Airport_Info.txt')
         .then(r => r.text())
@@ -69,12 +71,14 @@ function FSEJobFinder() {
     if (!airportInfo) {
       getAirportInfo();
     }
+
+    // Note: if we want to get assignments from local storage we would do it here
+
   }, [aircraftDictionary, airportInfo]);
 
   useEffect(() => {
     async function getAssignments() {
       setIsFirstLoad(false);
-      // Todo: check for user key and present error if not found
       const aircraftKey = Object.keys(aircraftDictionary).find(key => aircraftDictionary[key] === aircraft);
       const userKey = sessionStorage.getItem('user-key')
       const url = `${API_ENDPOINT}${API_RESOURCE}/v1${criteria}/${aircraftKey}`;
@@ -92,27 +96,25 @@ function FSEJobFinder() {
             const result = [];
             result.push(response.data);
             setAssignments(result);
-            setLastSuccessfulRequest(Date());
+            setLastSuccessfulRequest(new Date());
             setAssignmentsRetrieved(true);
           }
           setLoading(false);
         }
         else {
-          console.log("response was something other than a 200");
           if (response) {
-            console.log(response.status);
+            console.warn(`Received status: ${response.status} when we expected a 200 OK.`);
             setLoading(false);
             setAssignmentsRetrieved(false);
           }
         }
       } catch (error) {
         if (error.response) {
-          console.log(`Status Code: ${error.response.status}`);
-          console.log(error.response.data);
+          console.error(`${error.message} - Status Code: ${error.respone.status}`);
           setLoading(false);
           setAssignmentsRetrieved(false);
         } else {
-          console.log(error);
+          console.error(error.message);
           setLoading(false);
           setAssignmentsRetrieved(false);
         }
@@ -126,9 +128,18 @@ function FSEJobFinder() {
   }, [isLoading, aircraft, aircraftDictionary, criteria]);
 
   function handleClick(criteria) {
-    setCriteria(criteria);
-    setLoading(true);
-    setAssignmentsRetrieved(true);
+    const userKey = sessionStorage.getItem('user-key');
+    if (userKey && userKey.length > 0) {
+      setErroMsg("");
+      setCriteria(criteria);
+      setLoading(true);
+    } else if (!userKey && lastSuccessfulRequest) {
+      setErroMsg("Please set your user access before making additional requests!")
+      setAssignmentsRetrieved(false);
+    } else {
+      setErroMsg("Please set your user access key!");
+      setAssignmentsRetrieved(false);
+    }
   }
 
   function rad(x) {
@@ -146,6 +157,7 @@ function FSEJobFinder() {
       let destinationLat = 0;
       let destinationLong = 0;
 
+      // Todo: consider getting airport elevation and showing to user?
       // let originElevation = 0;
       // let destinationElevation = 0;
 
@@ -275,10 +287,11 @@ function FSEJobFinder() {
           }
         </Col>
       </Row>
-      <Row className='mt-4' xs='auto' s='auto'>
+      <Row className='mt-4' xs='1' sm='1' md='1' lg='auto'>
+        <Col>
+          <h2>Get Assignments: </h2>
+        </Col>
         <Col className='mb-2'>
-          {/* Todo: implement loading button on click */}
-          {/* https://react-bootstrap.github.io/components/buttons/#button-loading-state */}
           <Button
             id='bestAssignment'
             onClick={!isLoading ? () => handleClick('/bestAssignment') : null}
@@ -306,19 +319,25 @@ function FSEJobFinder() {
           </Button>
         </Col>
       </Row>
-      {/* Todo: progress bar when getting assignments?*/}
       <hr />
-      {/* {`last request: ${lastSuccessfulRequest.toString()}`} */}
       {isLoading &&
         <h4>Getting Assignments...</h4>
       }
-      {!assignmentsRetrieved && !lastSuccessfulRequest && !isFirstLoad &&
-        `Unable to get new assignments!`
+      {/* Todo: consider moving error messages to a modal */}
+      {
+        !assignmentsRetrieved && !lastSuccessfulRequest && !isFirstLoad && !isLoading &&
+        <p>Unable to get new assignments!</p>
       }
-      {!assignmentsRetrieved && lastSuccessfulRequest &&
-        `Unable to get new assignments! Showing old assignments from ${lastSuccessfulRequest.toString()}.`
+      {
+        !assignmentsRetrieved && lastSuccessfulRequest && !isLoading &&
+        <p>Unable to get new assignments! Showing assignments retrieved at {`${lastSuccessfulRequest.toLocaleTimeString()} on ${lastSuccessfulRequest.toDateString()}`}.</p>
       }
-      {!isLoading &&
+      {
+        !assignmentsRetrieved && errorMsg && !isLoading &&
+        <p>{errorMsg}</p>
+      }
+      {
+        !isLoading &&
         <CardGroup>
           {generateRouteCards()}
         </CardGroup>
