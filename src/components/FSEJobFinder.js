@@ -48,26 +48,35 @@ function FSEJobFinder() {
     getMakeModels();
   }, []);
 
-  async function getAssignments(criteria) {
-    console.log("Get Assignments for criteria: " + criteria);
-    debugger;
-    const url = `${apiEndpoint}${apiResource}/v1/${criteria}/${aircraft}`;
-    console.log(url);
-    let response = null;
-    try {
-      response = await axios.get(url);
-      if (response.status === 200) {
-        console.log(response.data[0].assignments);
-      }
-    } catch (error) {
-      if (response) {
-        console.log(`Received error response. Code: ${response.status}.`);
-        console.log(response.data);
-      }
-      console.log(error);
-      console.log(error.response.status);
-      console.log(error.response.data);
+  function generateRouteCards() {
+    let row = [];
+    if (assignments) {
+      assignments.forEach(assignment => {
+        row.push(
+          <Row key={assignment.id} className='m-1 mb-4'>
+            <Col>
+              <Card style={{ width: '18rem' }}>
+                <Card.Body>
+                  <Card.Title>{assignment.fromIcao} to {assignment.toIcao}</Card.Title>
+                  <Card.Text>
+                    {assignment.amount} {assignment.unitType}
+                  </Card.Text>
+                </Card.Body>
+                <ListGroup className="list-group-flush">
+                  <ListGroupItem>Pay: {stringToCurrency(assignment.pay)}</ListGroupItem>
+                  <ListGroupItem>Distance: {getDistance(assignment.fromIcao, assignment.toIcao)} nm</ListGroupItem>
+                  <ListGroupItem>Est. Flight Time: {estimateFlightTime(assignment.fromIcao, assignment.toIcao)}</ListGroupItem>
+                </ListGroup>
+                <Card.Footer>
+                  <a href={`https://server.fseconomy.net/airport.jsp?icao=${assignment.fromIcao}`} target='_blank' rel="noreferrer">Open FSE Airport Page</a>
+                </Card.Footer>
+              </Card>
+            </Col>
+          </Row>
+        );
+      });
     }
+    return (row);
   }
 
   if (!aircraft) {
