@@ -103,10 +103,10 @@ function FSEJobFinder() {
         else {
           if (response) {
             console.warn(`Received status: ${response.status} when we expected a 200 OK.`);
-            setLoading(false);
             setAssignmentsRetrieved(false);
           }
         }
+        setLoading(false);
       } catch (error) {
         if (error.response) {
           console.error(error.message);
