@@ -58,8 +58,12 @@ function FSEJobFinder() {
 
     // Todo: see if there is an api we can use instead of the static airport data
     //       maybe this is something we add to FSEDataFeedAPI using data from OurAirports?
+
+    // Todo: switch to using axios instead?
+
     function getAirportInfo() {
-      fetch('../data/Airport_Info.txt')
+      // fetch('../data/Airport_Info.txt')
+      fetch('https://raw.githubusercontent.com/jpatokal/openflights/master/data/airports.dat')
         .then(r => r.text())
         .then(text => {
           setAirportInfo(text);
