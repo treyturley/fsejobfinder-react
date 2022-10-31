@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './styles/Index.css';
+import './styles/index.css';
 
 import Header from './components/Header';
 import FSEJobFinder from './components/FSEJobFinder';
