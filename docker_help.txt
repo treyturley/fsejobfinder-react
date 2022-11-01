@@ -1,0 +1,10 @@
+Some examples of the docker commands to get the project up and running.
+
+To build the image, from the root folder of the project run:
+docker build -t fse-datafeed-ux .
+
+To start a container:
+docker run --name fse-ux -p 81:80 -d fse-datafeed-ux
+
+application should now be running and accessible on the host machine at port 81.
+
