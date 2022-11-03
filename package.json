@@ -1,5 +1,6 @@
 {
   "name": "fsejobfinder-react",
+  "homepage":"https://treyturley.com/fse-job-finder",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
