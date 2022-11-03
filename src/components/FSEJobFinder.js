@@ -30,7 +30,8 @@ function FSEJobFinder() {
 
   //const API_ENDPOINT = 'http://192.168.1.25:5152';
 
-  const API_ENDPOINT = 'http://3.15.44.207:5005';
+  //const API_ENDPOINT = 'http://3.15.44.207';
+  const API_ENDPOINT = 'https://treyturley.com';
 
   // const API_ENDPOINT = 'https://3.15.44.207:5006';
 
