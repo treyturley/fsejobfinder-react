@@ -38,7 +38,7 @@ function Header() {
     <>
       <Navbar bg="primary" variant="dark" className="header">
         <Container>
-          <Navbar.Brand href="#">FSE Job Finder</Navbar.Brand>
+          <Navbar.Brand href="#">FSE Job Finder CICD</Navbar.Brand>
           {!isUserKeySet &&
             <Form className="d-flex">
               <Form.Control
