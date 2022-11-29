@@ -5,3 +5,22 @@
 .no-wrap{
     white-space: nowrap;
 }
+
+form button{
+    margin: 0 10px;
+}
+
+
+.form-check{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+    color: white;
+    white-space: nowrap;
+}
+
+.form-check input{
+    margin: 0 5px;
+}
