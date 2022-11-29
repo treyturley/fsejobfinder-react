@@ -27,15 +27,7 @@ function FSEJobFinder() {
   const [assignmentsRetrieved, setAssignmentsRetrieved] = useState(false);
   const [lastSuccessfulRequest, setLastSuccessfulRequest] = useState(null);
 
-
-  //const API_ENDPOINT = 'http://192.168.1.25:5152';
-
-  //const API_ENDPOINT = 'http://3.15.44.207';
   const API_ENDPOINT = 'https://treyturley.com';
-
-  // const API_ENDPOINT = 'https://3.15.44.207:5006';
-
-
   const API_RESOURCE = '/api/FSEJobFinder';
 
   const LAT_INDEX = 6;
@@ -92,7 +84,10 @@ function FSEJobFinder() {
     async function getAssignments() {
       setIsFirstLoad(false);
       const aircraftKey = Object.keys(aircraftDictionary).find(key => aircraftDictionary[key] === aircraft);
-      const userKey = sessionStorage.getItem('user-key')
+      let userKey = localStorage.getItem('user-key');
+      if (!userKey) {
+        userKey = sessionStorage.getItem('user-key');
+      }
       const url = `${API_ENDPOINT}${API_RESOURCE}/v1${criteria}/${aircraftKey}`;
       try {
         const response = await axios.get(url, {
@@ -139,7 +134,10 @@ function FSEJobFinder() {
   }, [isLoading, aircraft, aircraftDictionary, criteria]);
 
   function handleClick(criteria) {
-    const userKey = sessionStorage.getItem('user-key');
+    let userKey = localStorage.getItem('user-key');
+    if (!userKey) {
+      userKey = sessionStorage.getItem('user-key');
+    }
     if (userKey && userKey.length > 0) {
       setErroMsg("");
       setCriteria(criteria);
