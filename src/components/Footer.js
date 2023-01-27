@@ -1,12 +1,12 @@
-import React from 'react'
-import "../styles/Footer.css"
+import React from 'react';
+import '../styles/Footer.css';
 
 function Footer() {
   return (
-      <footer>
-        <h4>footer</h4>
-      </footer>
-  )
+    <footer>
+      <a href='https://treyturley.com'>treyturley.com</a>
+    </footer>
+  );
 }
 
 export default Footer;
