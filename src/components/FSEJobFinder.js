@@ -410,7 +410,7 @@ function FSEJobFinder() {
             onClick={!isLoading ? () => handleRecentAssignments() : null}
             disabled={isLoading || aircraft == null}
           >
-            Recent Assignments from Database
+            Recent Assignments from Database (no key required)
           </Button>
         </Col>
       </Row>
