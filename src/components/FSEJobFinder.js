@@ -1,12 +1,19 @@
 // Note: open source airport information - https://ourairports.com/data/
 
-import '../styles/FSEJobFinder.css'
+import '../styles/FSEJobFinder.css';
 
 import { useState, useEffect } from 'react';
 
 import {
-  Container, Row, Col, Dropdown,
-  Button, Card, CardGroup, ListGroup, ListGroupItem
+  Container,
+  Row,
+  Col,
+  Dropdown,
+  Button,
+  Card,
+  CardGroup,
+  ListGroup,
+  ListGroupItem,
 } from 'react-bootstrap';
 
 import DropdownMenu from 'react-bootstrap/esm/DropdownMenu';
@@ -23,6 +30,7 @@ function FSEJobFinder() {
   const [isLoading, setLoading] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [errorMsg, setErroMsg] = useState('');
+  const [jobsFromDB, setJobsFromDB] = useState(false);
 
   const [assignmentsRetrieved, setAssignmentsRetrieved] = useState(false);
   const [lastSuccessfulRequest, setLastSuccessfulRequest] = useState(null);
@@ -63,9 +71,11 @@ function FSEJobFinder() {
 
     function getAirportInfo() {
       // fetch('../data/Airport_Info.txt')
-      fetch('https://raw.githubusercontent.com/jpatokal/openflights/master/data/airports.dat')
-        .then(r => r.text())
-        .then(text => {
+      fetch(
+        'https://raw.githubusercontent.com/jpatokal/openflights/master/data/airports.dat'
+      )
+        .then((r) => r.text())
+        .then((text) => {
           setAirportInfo(text);
         });
     }
@@ -77,13 +87,14 @@ function FSEJobFinder() {
     }
 
     // Note: if we want to get assignments from local storage we would do it here
-
   }, [aircraftDictionary, airportInfo]);
 
   useEffect(() => {
     async function getAssignments() {
       setIsFirstLoad(false);
-      const aircraftKey = Object.keys(aircraftDictionary).find(key => aircraftDictionary[key] === aircraft);
+      const aircraftKey = Object.keys(aircraftDictionary).find(
+        (key) => aircraftDictionary[key] === aircraft
+      );
       let userKey = localStorage.getItem('user-key');
       if (!userKey) {
         userKey = sessionStorage.getItem('user-key');
@@ -92,8 +103,8 @@ function FSEJobFinder() {
       try {
         const response = await axios.get(url, {
           headers: {
-            'fse-access-key': userKey
-          }
+            'fse-access-key': userKey,
+          },
         });
 
         if (response.status === 200) {
@@ -106,10 +117,11 @@ function FSEJobFinder() {
           }
           setLastSuccessfulRequest(new Date());
           setAssignmentsRetrieved(true);
-        }
-        else {
+        } else {
           if (response) {
-            console.warn(`Received status: ${response.status} when we expected a 200 OK.`);
+            console.warn(
+              `Received status: ${response.status} when we expected a 200 OK.`
+            );
             setAssignmentsRetrieved(false);
           }
         }
@@ -127,11 +139,47 @@ function FSEJobFinder() {
       }
     }
 
-    if (isLoading) {
-      getAssignments();
+    async function getJobsFromDB() {
+      const aircraftKey = Object.keys(aircraftDictionary).find(
+        (key) => aircraftDictionary[key] === aircraft
+      );
+      const url = `${API_ENDPOINT}${API_RESOURCE}/v1/getRecentAssignments/${aircraftKey}`;
+      try {
+        const response = await axios.get(url);
+
+        if (response.status === 200) {
+          setAssignments(response.data.jobs);
+          setLastSuccessfulRequest(new Date());
+          setAssignmentsRetrieved(true);
+          setJobsFromDB(false);
+        } else {
+          if (response) {
+            console.warn(
+              `Received status: ${response.status} when we expected a 200 OK.`
+            );
+            setAssignmentsRetrieved(false);
+          }
+        }
+        setLoading(false);
+      } catch (error) {
+        if (error.response) {
+          console.error(error.message);
+          setLoading(false);
+          setAssignmentsRetrieved(false);
+        } else {
+          console.error(error.message);
+          setLoading(false);
+          setAssignmentsRetrieved(false);
+        }
+      }
     }
 
-  }, [isLoading, aircraft, aircraftDictionary, criteria]);
+    if (isLoading && !jobsFromDB) {
+      getAssignments();
+    } else if (isLoading && jobsFromDB) {
+      getJobsFromDB();
+    }
+  }, [isLoading, jobsFromDB, aircraft, aircraftDictionary, criteria]);
 
   function handleClick(criteria) {
     let userKey = localStorage.getItem('user-key');
@@ -139,28 +187,34 @@ function FSEJobFinder() {
       userKey = sessionStorage.getItem('user-key');
     }
     if (userKey && userKey.length > 0) {
-      setErroMsg("");
+      setErroMsg('');
       setCriteria(criteria);
       setLoading(true);
     } else if (!userKey && lastSuccessfulRequest) {
-      setErroMsg("Please set your user access before making additional requests!")
+      setErroMsg(
+        'Please set your user access before making additional requests!'
+      );
       setAssignmentsRetrieved(false);
     } else {
-      setErroMsg("Please set your user access key!");
+      setErroMsg('Please set your user access key!');
       setAssignmentsRetrieved(false);
     }
   }
 
+  function handleRecentAssignments() {
+    setErroMsg('');
+    setJobsFromDB(true);
+    setLoading(true);
+  }
+
   function rad(x) {
-    return x * Math.PI / 180;
-  };
+    return (x * Math.PI) / 180;
+  }
 
   // Haversine formula for calculating great circle distance
   // source: https://stackoverflow.com/questions/1502590/calculate-distance-between-two-points-in-google-maps-v3
   function getDistance(origin, destination) {
-
     if (airportInfo && airportInfo.length > 0) {
-
       let originLat = 0;
       let originLong = 0;
       let destinationLat = 0;
@@ -173,13 +227,13 @@ function FSEJobFinder() {
       const fileLines = airportInfo.split(/\r?\n/);
 
       fileLines.forEach((line) => {
-        if (line.includes("\"" + origin + "\"")) {
+        if (line.includes('"' + origin + '"')) {
           const splitLine = line.split(',');
           originLat = splitLine[LAT_INDEX];
           originLong = splitLine[LONG_INDEX];
           // originElevation = splitLine[ELEVATION_INDEX];
         }
-        if (line.includes("\"" + destination + "\"")) {
+        if (line.includes('"' + destination + '"')) {
           const splitLine = line.split(',');
           destinationLat = splitLine[LAT_INDEX];
           destinationLong = splitLine[LONG_INDEX];
@@ -192,9 +246,12 @@ function FSEJobFinder() {
       var dLat = rad(destinationLat - originLat);
       var dLong = rad(destinationLong - originLong);
 
-      var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(rad(originLat)) * Math.cos(rad(destinationLat)) *
-        Math.sin(dLong / 2) * Math.sin(dLong / 2);
+      var a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(rad(originLat)) *
+          Math.cos(rad(destinationLat)) *
+          Math.sin(dLong / 2) *
+          Math.sin(dLong / 2);
 
       var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
@@ -203,11 +260,10 @@ function FSEJobFinder() {
       // returns the distance in nautical miles
       return Math.round(d * 0.000539957);
     }
-  };
+  }
 
   // Todo: find a better way to estimate flight time
   function estimateFlightTime(origin, destination) {
-
     let flightTime = 0;
     const distance = getDistance(origin, destination);
 
@@ -215,45 +271,62 @@ function FSEJobFinder() {
 
     if (flightTime < 1.0) {
       // roll in extra time for departure/arrival
-      flightTime += .4;
+      flightTime += 0.4;
     }
 
     const totalMinutes = flightTime * 60;
     const hours = parseInt(totalMinutes / 60);
     const minutes = totalMinutes % 60;
 
-    return `${hours}h ${minutes.toFixed(0)}m`
+    return `${hours}h ${minutes.toFixed(0)}m`;
   }
 
   function stringToCurrency(strAmount) {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      maximumFractionDigits: 0
-    }).format(strAmount)
+      maximumFractionDigits: 0,
+    }).format(strAmount);
   }
 
+  // TODO: Move this to its own component
   function generateRouteCards() {
     let row = [];
     if (assignments) {
-      assignments.forEach(assignment => {
+      assignments.forEach((assignment) => {
         row.push(
           <Row key={assignment.id} className='m-1 mb-4'>
             <Col>
               <Card style={{ width: '18rem' }}>
                 <Card.Body>
-                  <Card.Title>{assignment.fromIcao} to {assignment.toIcao}</Card.Title>
+                  <Card.Title>
+                    {assignment.fromIcao} to {assignment.toIcao}
+                  </Card.Title>
                   <Card.Text>
                     {assignment.amount} {assignment.unitType}
                   </Card.Text>
                 </Card.Body>
-                <ListGroup className="list-group-flush">
-                  <ListGroupItem>Pay: {stringToCurrency(assignment.pay)}</ListGroupItem>
-                  <ListGroupItem>Distance: {getDistance(assignment.fromIcao, assignment.toIcao)} nm</ListGroupItem>
-                  <ListGroupItem>Est. Flight Time: {estimateFlightTime(assignment.fromIcao, assignment.toIcao)}</ListGroupItem>
+                <ListGroup className='list-group-flush'>
+                  <ListGroupItem>
+                    Pay: {stringToCurrency(assignment.pay)}
+                  </ListGroupItem>
+                  <ListGroupItem>
+                    Distance:{' '}
+                    {getDistance(assignment.fromIcao, assignment.toIcao)} nm
+                  </ListGroupItem>
+                  <ListGroupItem>
+                    Est. Flight Time:{' '}
+                    {estimateFlightTime(assignment.fromIcao, assignment.toIcao)}
+                  </ListGroupItem>
                 </ListGroup>
                 <Card.Footer>
-                  <a href={`https://server.fseconomy.net/airport.jsp?icao=${assignment.fromIcao}`} target='_blank' rel="noreferrer">Open FSE Airport Page</a>
+                  <a
+                    href={`https://server.fseconomy.net/airport.jsp?icao=${assignment.fromIcao}`}
+                    target='_blank'
+                    rel='noreferrer'
+                  >
+                    Open FSE Airport Page
+                  </a>
                 </Card.Footer>
               </Card>
             </Col>
@@ -261,7 +334,7 @@ function FSEJobFinder() {
         );
       });
     }
-    return (row);
+    return row;
   }
 
   if (!aircraft) {
@@ -285,15 +358,17 @@ function FSEJobFinder() {
             <DropdownMenu>
               {aircraftDictionary &&
                 Object.entries(aircraftDictionary).map(([key, value]) => (
-                  <DropdownItem key={key} onClick={() => setAircraft(value)}>{value}</DropdownItem>
+                  <DropdownItem key={key} onClick={() => setAircraft(value)}>
+                    {value}
+                  </DropdownItem>
                 ))}
             </DropdownMenu>
           </Dropdown>
         </Col>
         <Col>
-          {!aircraftDictionary &&
+          {!aircraftDictionary && (
             <p className='error-text'>Failed to get aircraft!</p>
-          }
+          )}
         </Col>
       </Row>
       <Row className='mt-4' xs='1' sm='1' md='1' lg='auto'>
@@ -321,37 +396,40 @@ function FSEJobFinder() {
         <Col className='mb-2'>
           <Button
             id='assignmentsFromOrToUS'
-            onClick={!isLoading ? () => handleClick('/assignmentsFromOrToUS') : null}
+            onClick={
+              !isLoading ? () => handleClick('/assignmentsFromOrToUS') : null
+            }
             disabled={isLoading || aircraft == null}
           >
             Assignments to or from the US
           </Button>
         </Col>
+        <Col className='mb-2'>
+          <Button
+            id='getRecentAssignments'
+            onClick={!isLoading ? () => handleRecentAssignments() : null}
+            disabled={isLoading || aircraft == null}
+          >
+            Recent Assignments from Database (no key required)
+          </Button>
+        </Col>
       </Row>
       <hr />
-      {isLoading &&
-        <h4>Getting Assignments...</h4>
-      }
+      {isLoading && <h4>Getting Assignments...</h4>}
       {/* Todo: consider moving error messages to a modal */}
-      {
-        !assignmentsRetrieved && !lastSuccessfulRequest && !isFirstLoad && !isLoading &&
-        <p>Unable to get new assignments!</p>
-      }
-      {
-        !assignmentsRetrieved && lastSuccessfulRequest && !isLoading &&
-        <p>Unable to get new assignments! Showing assignments retrieved at {`${lastSuccessfulRequest.toLocaleTimeString()} on ${lastSuccessfulRequest.toDateString()}`}.</p>
-      }
-      {
-        !assignmentsRetrieved && errorMsg && !isLoading &&
-        <p>{errorMsg}</p>
-      }
-      {
-        !isLoading &&
-        <CardGroup>
-          {generateRouteCards()}
-        </CardGroup>
-      }
-
+      {!assignmentsRetrieved &&
+        !lastSuccessfulRequest &&
+        !isFirstLoad &&
+        !isLoading && <p>Unable to get new assignments!</p>}
+      {!assignmentsRetrieved && lastSuccessfulRequest && !isLoading && (
+        <p>
+          Unable to get new assignments! Showing assignments retrieved at{' '}
+          {`${lastSuccessfulRequest.toLocaleTimeString()} on ${lastSuccessfulRequest.toDateString()}`}
+          .
+        </p>
+      )}
+      {!assignmentsRetrieved && errorMsg && !isLoading && <p>{errorMsg}</p>}
+      {!isLoading && <CardGroup>{generateRouteCards()}</CardGroup>}
     </Container>
   );
 }
