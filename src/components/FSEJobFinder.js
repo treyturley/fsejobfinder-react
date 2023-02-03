@@ -151,6 +151,7 @@ function FSEJobFinder() {
           setAssignments(response.data.jobs);
           setLastSuccessfulRequest(new Date());
           setAssignmentsRetrieved(true);
+          setJobsFromDB(false);
         } else {
           if (response) {
             console.warn(
