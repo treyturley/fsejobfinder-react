@@ -30,6 +30,7 @@ function FSEJobFinder() {
   const [isLoading, setLoading] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [errorMsg, setErroMsg] = useState('');
+  const [jobsFromDB, setJobsFromDB] = useState(false);
 
   const [assignmentsRetrieved, setAssignmentsRetrieved] = useState(false);
   const [lastSuccessfulRequest, setLastSuccessfulRequest] = useState(null);
@@ -137,8 +138,24 @@ function FSEJobFinder() {
         }
       }
     }
+
+    async function getJobsFromDB() {
+      const aircraftKey = Object.keys(aircraftDictionary).find(
+        (key) => aircraftDictionary[key] === aircraft
+      );
+      const url = `${API_ENDPOINT}${API_RESOURCE}/v1/getRecentAssignments/${aircraftKey}`;
+      try {
+        const response = await axios.get(url);
+
+        if (response.status === 200) {
+          setAssignments(response.data.jobs);
+          setLastSuccessfulRequest(new Date());
+          setAssignmentsRetrieved(true);
+        } else {
           if (response) {
-            console.warn(`Received status: ${response.status} when we expected a 200 OK.`);
+            console.warn(
+              `Received status: ${response.status} when we expected a 200 OK.`
+            );
             setAssignmentsRetrieved(false);
           }
         }
@@ -156,11 +173,12 @@ function FSEJobFinder() {
       }
     }
 
-    if (isLoading) {
+    if (isLoading && !jobsFromDB) {
       getAssignments();
+    } else if (isLoading && jobsFromDB) {
+      getJobsFromDB();
     }
-
-  }, [isLoading, aircraft, aircraftDictionary, criteria]);
+  }, [isLoading, jobsFromDB, aircraft, aircraftDictionary, criteria]);
 
   function handleClick(criteria) {
     let userKey = localStorage.getItem('user-key');
@@ -180,6 +198,12 @@ function FSEJobFinder() {
       setErroMsg('Please set your user access key!');
       setAssignmentsRetrieved(false);
     }
+  }
+
+  function handleRecentAssignments() {
+    setErroMsg('');
+    setJobsFromDB(true);
+    setLoading(true);
   }
 
   function rad(x) {
@@ -333,15 +357,17 @@ function FSEJobFinder() {
             <DropdownMenu>
               {aircraftDictionary &&
                 Object.entries(aircraftDictionary).map(([key, value]) => (
-                  <DropdownItem key={key} onClick={() => setAircraft(value)}>{value}</DropdownItem>
+                  <DropdownItem key={key} onClick={() => setAircraft(value)}>
+                    {value}
+                  </DropdownItem>
                 ))}
             </DropdownMenu>
           </Dropdown>
         </Col>
         <Col>
-          {!aircraftDictionary &&
+          {!aircraftDictionary && (
             <p className='error-text'>Failed to get aircraft!</p>
-          }
+          )}
         </Col>
       </Row>
       <Row className='mt-4' xs='1' sm='1' md='1' lg='auto'>
@@ -375,6 +401,15 @@ function FSEJobFinder() {
             disabled={isLoading || aircraft == null}
           >
             Assignments to or from the US
+          </Button>
+        </Col>
+        <Col className='mb-2'>
+          <Button
+            id='getRecentAssignments'
+            onClick={!isLoading ? () => handleRecentAssignments() : null}
+            disabled={isLoading || aircraft == null}
+          >
+            Recent Assignments from Database
           </Button>
         </Col>
       </Row>
